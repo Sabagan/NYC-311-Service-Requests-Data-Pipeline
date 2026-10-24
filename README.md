@@ -12,7 +12,7 @@ NYC Open Data (no restrictions on use; free public download), Terms of Use: http
 3. How many noise complaints came in per hour in each ZIP code tonight? (stream)
 
 ## Storage
-- Download the CSV from Open Data NYC, containing all 2026 data until present data, then used the storage.py to convert to Parquet
+- Download the CSV from Open Data NYC, containing all 2026 data until present data, then used the storage.py or spark_storage.py to convert to Parquet (can compare both scripts to test performance in converting to Parquet using Pandas vs PySpark)
 - Used the API to get the data as Json in steps, then converted it Parquet
 
 We can compare storage reduction efficiencies in terms of using Parquet rather than JSON and CSV.
