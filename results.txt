@@ -1,12 +1,22 @@
-# Storage Analysis
+--- (1) HEADER ---
+Name: Sabagan Chandrakanthan
+Student Number: 501175020
+Section: 1
+Language: Python
+Acknowledgement: OpenAI to Assist Code Generation
+
+
+--- (2) STORAGE ANALYSIS RESULTS ---
+CSV vs Parquet (can include or use JSON alternatively)
 
 CSV file size:                  2783.10 MB
 Parquet file size:              330.52 MB
 Storage reduction:              88.12%
 
-# Spark Analysis
 
-===== Complaint types by borough =====
+--- (3) QUESTION-ANSWERING OPTIMIZATION ANALYSIS RESULTS ---
+
+## Complaint types by borough
 CSV | Run 1: 49.89 seconds                                                      
 CSV | Run 2: 21.41 seconds                                                      
 CSV | Run 3: 12.09 seconds  
@@ -25,7 +35,7 @@ Parquet median: 2.67 seconds
 
 Speedup: 8.02x
 
-===== Average closure time by agency =====
+# Average closure time by agency
 CSV | Run 1: 12.23 seconds                                                      
 CSV | Run 2: 11.89 seconds                                                      
 CSV | Run 3: 11.35 seconds 
