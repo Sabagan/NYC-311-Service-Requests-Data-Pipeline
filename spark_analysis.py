@@ -165,8 +165,8 @@ try:
             PARQUET_PATH, "parquet", query_function
         )
 
-        # print("CSV Results: ", csv_result)
-        # print("Parquet Results: ", parquet_result)
+        print("CSV Results: ", csv_result)
+        print("Parquet Results: ", parquet_result)
         
         print(
             "Results match:",
