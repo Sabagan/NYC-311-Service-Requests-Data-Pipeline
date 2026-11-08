@@ -6,7 +6,7 @@ from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
 # Change path based on file name
-CSV_PATH = "311_Service_Requests_For_2026_Until_20261019.csv"
+CSV_PATH = "311_Service_Requests_For_2026_Until_20261019_clean.csv"
 PARQUET_PATH = "311_Service_Requests_For_2026.parquet"
 REPEATS = 3
 
@@ -26,6 +26,12 @@ def load_data(path, file_format):
             .option("header", True)
             .option("inferSchema", False)
             .option("mode", "PERMISSIVE")
+            # The CSV quotes fields RFC 4180 style: a quote inside a value is
+            # doubled (""...""). Spark escapes with a backslash by default,
+            # so those values would split at their commas and shift the rest
+            # of the row one column left (e.g. Police Precinct becoming
+            # Borough). Unescape with a quote instead.
+            .option("escape", '"')
             .csv(path)
         )
     elif file_format == "parquet":

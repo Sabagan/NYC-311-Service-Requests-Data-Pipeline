@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 
 # Input and output file paths
-csv_file = Path("311_Service_Requests_For_2026_Until_20261019.csv")
+csv_file = Path("311_Service_Requests_For_2026_Until_20261019_clean.csv")
 parquet_file = Path("311_Service_Requests_For_2026.parquet")
 
 # Read CSV file

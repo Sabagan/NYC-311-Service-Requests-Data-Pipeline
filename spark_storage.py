@@ -15,7 +15,7 @@ if sys.platform == "win32":
     )
 
 # Input and output file paths
-csv_file = Path("311_Service_Requests_For_2026_Until_20261019.csv")
+csv_file = Path("311_Service_Requests_For_2026_Until_20261019_clean.csv")
 parquet_file = Path("311_Service_Requests_For_2026.parquet")
 
 # Spark writes to a directory, so build via a temp dir and keep one file
@@ -36,6 +36,8 @@ try:
         .option("header", True)
         .option("inferSchema", False)
         .option("mode", "PERMISSIVE")
+        # Values quote-double their internal quotes; see spark_analysis.py.
+        .option("escape", '"')
         .csv(str(csv_file))
     )
 
