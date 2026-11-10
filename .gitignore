@@ -1,3 +1,17 @@
 *.csv
 *.parquet
 winutils/bin/
+# Generated output
+output/
+
+# Spark checkpoints
+streaming/checkpoints/
+
+# Local SQLite databases
+streaming/*.sqlite
+streaming/*.sqlite-*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
