@@ -399,17 +399,15 @@ assert kept_rows + dropped_rows == total_rows, (
 # 12. WRITE CLEAN CSV
 # ============================================================
 
-# Spark writes CSV output as a directory containing part files.
-# Write to a temporary directory first.
+# Spark writes one file per partition inside a directory, so a plain write
+# would leave many part files instead of the single CSV that clean.py
+# produces. Coalesce to one partition, write to a temporary directory, then
+# move the one part file into place so the swap is atomic for readers.
 
 temp_dir = str(clean_csv) + ".part"
-output_dir = str(clean_csv) + "_output"
 
 if os.path.exists(temp_dir):
     shutil.rmtree(temp_dir)
-
-if os.path.exists(output_dir):
-    shutil.rmtree(output_dir)
 
 # Remove helper columns and retain the original schema.
 clean_output = clean_df.select(*header)
@@ -417,6 +415,8 @@ clean_output = clean_df.select(*header)
 try:
     (
         clean_output
+        # One output file instead of one per partition.
+        .coalesce(1)
         .write
         .mode("overwrite")
         .option("header", True)
@@ -427,9 +427,20 @@ try:
         .csv(temp_dir)
     )
 
-    # Spark CSV output is a directory, not a single CSV file.
-    # Rename the temporary directory after successful writing.
-    os.replace(temp_dir, output_dir)
+    # The coalesced write leaves exactly one part file in the temp directory.
+    # Move it to the final path, then drop the now-empty directory.
+    part_files = sorted(
+        p for p in Path(temp_dir).iterdir()
+        if p.is_file() and p.name.startswith("part-")
+    )
+
+    if len(part_files) != 1:
+        raise RuntimeError(
+            f"Expected one part file in {temp_dir}, "
+            f"found {len(part_files)}"
+        )
+
+    os.replace(part_files[0], clean_csv)
 
 finally:
     if os.path.exists(temp_dir):
@@ -440,7 +451,7 @@ finally:
 # 13. VERIFY CLEAN DATASET
 # ============================================================
 
-verify_df = read_csv(output_dir)
+verify_df = read_csv(clean_csv)
 
 verify_df = verify_df.select(
     *[F.col(c).cast("string").alias(c) for c in header]
