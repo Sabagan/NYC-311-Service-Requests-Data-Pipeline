@@ -12,7 +12,7 @@ NYC Open Data (no restrictions on use; free public download), Terms of Use: http
 3. How many noise complaints came in per hour in each ZIP code tonight? (stream)
 
 ## Directory Layout
-- `batch/` - `clean_requests.py`, `convert_to_parquet.py` and `benchmark_layouts.py` (PySpark implementations)
+- `batch/` - `spark_config.py` (shared paths and Windows Hadoop setup), `clean_requests.py`, `convert_to_parquet.py` and `benchmark_layouts.py` (PySpark implementations)
 - `data/raw/` - the downloaded CSV and temporary build files
 - `data/processing/` - the cleaned CSV, the single-file Parquet, and the month-partitioned Parquet directory produced by the batch scripts
 - `streaming/` - the Kafka producer, consumer and replay preparation scripts

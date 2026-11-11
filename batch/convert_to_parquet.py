@@ -1,23 +1,11 @@
-import os
 import shutil
-import sys
-from pathlib import Path
 
 from pyspark.sql import SparkSession, functions as F
 
-# Writing local files with Spark on Windows needs winutils.exe + hadoop.dll.
-# They live in the project root under winutils/bin.
-if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parents[1] / "winutils"
-    os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
-    os.environ["PATH"] = (
-        str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
-    )
+from spark_config import DATA_PROCESSING, DATA_RAW, configure_hadoop
 
-# Resolve the project root so these paths work from any working directory.
-ROOT = Path(__file__).resolve().parents[1]
-DATA_RAW = ROOT / "data" / "raw"
-DATA_PROCESSING = ROOT / "data" / "processing"
+# Writing local files with Spark on Windows needs winutils.exe + hadoop.dll.
+configure_hadoop()
 
 # Input and output file paths
 csv_file = (

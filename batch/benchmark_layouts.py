@@ -1,25 +1,16 @@
-import os
+import statistics
 import sys
 import time
-import statistics
 from pathlib import Path
 
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
-# Reading a partitioned Parquet directory on Windows needs winutils.exe +
-# hadoop.dll, because Hadoop's native IO does the directory listing. Same
-# bootstrap as convert_to_parquet.py.
-if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parents[1] / "winutils"
-    os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
-    os.environ["PATH"] = (
-        str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
-    )
+from spark_config import DATA_PROCESSING, configure_hadoop
 
-# Resolve the project root so these paths work from any working directory.
-ROOT = Path(__file__).resolve().parents[1]
-DATA_PROCESSING = ROOT / "data" / "processing"
+# Reading a partitioned Parquet directory on Windows needs winutils.exe +
+# hadoop.dll, because Hadoop's native IO does the directory listing.
+configure_hadoop()
 
 # Change path based on file name
 CSV_PATH = str(

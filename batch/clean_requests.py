@@ -7,21 +7,14 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parents[1] / "winutils"
-    os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
-    os.environ["PATH"] = (
-        str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
-    )
+from spark_config import DATA_PROCESSING, DATA_RAW, configure_hadoop
+
+# Point Hadoop at the bundled winutils before SparkSession starts.
+configure_hadoop()
 
 # ============================================================
 # 1. CONFIGURATION
 # ============================================================
-
-# Resolve the project root so these paths work from any working directory.
-ROOT = Path(__file__).resolve().parents[1]
-DATA_RAW = ROOT / "data" / "raw"
-DATA_PROCESSING = ROOT / "data" / "processing"
 
 raw_csv = DATA_RAW / "311_Service_Requests_For_2026_Until_20261019.csv"
 clean_csv = (
