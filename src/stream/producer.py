@@ -4,8 +4,8 @@ from pathlib import Path
 import sqlite3
 import json
 
-ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT / "streaming" / "events_sorted.sqlite"
+STREAM_DIR = Path(__file__).resolve().parent
+DB_PATH = STREAM_DIR / "events_sorted.sqlite"
 
 TOPIC = "nyc311-replay-full"
 MAX_EVENTS = None

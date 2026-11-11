@@ -7,11 +7,12 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json, to_timestamp, trim, window
 from pyspark.sql.types import StructType, StructField, StringType
 
-ROOT = Path(__file__).resolve().parent.parent
+STREAM_DIR = Path(__file__).resolve().parent
+ROOT = STREAM_DIR.parents[1]
 
-STATE_DB = ROOT / "streaming" / "hourly_noise_full.sqlite"
+STATE_DB = STREAM_DIR / "hourly_noise_full.sqlite"
 OUTPUT_CSV = ROOT / "output" / "hourly_noise_full.csv"
-CHECKPOINT_PATH = ROOT / "streaming" / "checkpoints" / "hourly_noise_full"
+CHECKPOINT_PATH = STREAM_DIR / "checkpoints" / "hourly_noise_full"
 
 OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 

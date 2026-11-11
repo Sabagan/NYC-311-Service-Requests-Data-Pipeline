@@ -4,10 +4,11 @@ from datetime import datetime
 import sqlite3
 import pyarrow.parquet as pq
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
+STREAM_DIR = Path(__file__).resolve().parent
 
 PARQUET_PATH = ROOT / "data" / "processing" / "311_Service_Requests_For_2026.parquet"
-DB_PATH = ROOT / "streaming" / "events_sorted.sqlite"
+DB_PATH = STREAM_DIR / "events_sorted.sqlite"
 
 DATE_FORMAT = "%m/%d/%Y %I:%M:%S %p"
 

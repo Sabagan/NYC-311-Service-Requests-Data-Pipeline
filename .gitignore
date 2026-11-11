@@ -4,11 +4,11 @@ data/
 output/
 
 # Spark checkpoints
-streaming/checkpoints/
+src/stream/checkpoints/
 
 # Local SQLite databases
-streaming/*.sqlite
-streaming/*.sqlite-*
+src/stream/*.sqlite
+src/stream/*.sqlite-*
 
 # Python
 __pycache__/

@@ -7,7 +7,10 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-from spark_config import DATA_PROCESSING, DATA_RAW, configure_hadoop
+# Make src/ importable when this file is run as a script.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from config.spark_config import DATA_PROCESSING, DATA_RAW, configure_hadoop
 
 # Point Hadoop at the bundled winutils before SparkSession starts.
 configure_hadoop()

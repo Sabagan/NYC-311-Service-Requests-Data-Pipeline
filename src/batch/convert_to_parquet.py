@@ -1,8 +1,13 @@
 import shutil
+import sys
+from pathlib import Path
+
+# Make src/ importable when this file is run as a script.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pyspark.sql import SparkSession, functions as F
 
-from spark_config import DATA_PROCESSING, DATA_RAW, configure_hadoop
+from config.spark_config import DATA_PROCESSING, DATA_RAW, configure_hadoop
 
 # Writing local files with Spark on Windows needs winutils.exe + hadoop.dll.
 configure_hadoop()

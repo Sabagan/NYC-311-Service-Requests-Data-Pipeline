@@ -6,7 +6,10 @@ from pathlib import Path
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
-from spark_config import DATA_PROCESSING, configure_hadoop
+# Make src/ importable when this file is run as a script.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from config.spark_config import DATA_PROCESSING, configure_hadoop
 
 # Reading a partitioned Parquet directory on Windows needs winutils.exe +
 # hadoop.dll, because Hadoop's native IO does the directory listing.

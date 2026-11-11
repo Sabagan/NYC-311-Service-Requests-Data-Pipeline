@@ -9,15 +9,16 @@ import os
 import sys
 from pathlib import Path
 
-# batch/ sits one level below the project root, so this works from any working
-# directory.
-ROOT = Path(__file__).resolve().parents[1]
+# src/config/ sits two levels below the project root, so this works from any
+# working directory.
+ROOT = Path(__file__).resolve().parents[2]
 DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSING = ROOT / "data" / "processing"
 
 # Writing local files with Spark on Windows needs winutils.exe + hadoop.dll.
-# They live in the project root under winutils/bin.
-WINUTILS_DIR = ROOT / "winutils"
+# They live in bin/ at the project root, so HADOOP_HOME points there and
+# Spark finds bin/winutils.exe.
+BIN_DIR = ROOT / "bin"
 
 
 def configure_hadoop():
@@ -25,7 +26,5 @@ def configure_hadoop():
     if sys.platform != "win32":
         return
 
-    os.environ.setdefault("HADOOP_HOME", str(WINUTILS_DIR))
-    os.environ["PATH"] = (
-        str(WINUTILS_DIR / "bin") + os.pathsep + os.environ["PATH"]
-    )
+    os.environ.setdefault("HADOOP_HOME", str(ROOT))
+    os.environ["PATH"] = str(BIN_DIR) + os.pathsep + os.environ["PATH"]

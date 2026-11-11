@@ -12,15 +12,17 @@ NYC Open Data (no restrictions on use; free public download), Terms of Use: http
 3. How many noise complaints came in per hour in each ZIP code tonight? (stream)
 
 ## Directory Layout
-- `batch/` - `spark_config.py` (shared paths and Windows Hadoop setup), `clean_requests.py`, `convert_to_parquet.py` and `benchmark_layouts.py` (PySpark implementations)
+- `src/batch/` - `clean_requests.py`, `convert_to_parquet.py` and `benchmark_layouts.py` (PySpark implementations), plus their run output
+- `src/config/` - `spark_config.py`, the shared project paths and the Windows Hadoop setup
+- `src/stream/` - the Kafka producer and consumer plus `prepare_replay.py`, which builds the replay database the producer reads; their SQLite state and checkpoints live here too
+- `bin/` - `winutils.exe` and `hadoop.dll`, the Windows Hadoop files Spark needs
 - `data/raw/` - the downloaded CSV and temporary build files
 - `data/processing/` - the cleaned CSV, the single-file Parquet, and the month-partitioned Parquet directory produced by the batch scripts
-- `streaming/` - the Kafka producer, consumer and replay preparation scripts
 
 ## Storage
-- Download the CSV from Open Data NYC, containing all 2026 data until present data, then use `batch/convert_to_parquet.py` to convert it to Parquet
+- Download the CSV from Open Data NYC, containing all 2026 data until present data, then use `src/batch/convert_to_parquet.py` to convert it to Parquet
 
-`batch/convert_to_parquet.py` also writes a month-partitioned Parquet dataset at `data/processing/311_Service_Requests_For_2026_month_partitioned.parquet/`, laid out as `created_month=YYYY-MM/part-*.parquet`. Spark discovers `created_month` from the folder names, so a query that filters on it reads only the matching months (partition pruning), and the size trade-off against the single-file Parquet is reported next to it.
+`src/batch/convert_to_parquet.py` also writes a month-partitioned Parquet dataset at `data/processing/311_Service_Requests_For_2026_month_partitioned.parquet/`, laid out as `created_month=YYYY-MM/part-*.parquet`. Spark discovers `created_month` from the folder names, so a query that filters on it reads only the matching months (partition pruning), and the size trade-off against the single-file Parquet is reported next to it.
 
 ## Spark-based Analysis
-We will compare the performance of CSV vs Parquet vs month-partitioned Parquet in answering the first two (batch) questions, using batch/benchmark_layouts.py
+We will compare the performance of CSV vs Parquet vs month-partitioned Parquet in answering the first two (batch) questions, using src/batch/benchmark_layouts.py
