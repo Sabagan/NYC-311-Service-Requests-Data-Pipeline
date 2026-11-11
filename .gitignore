@@ -1,6 +1,6 @@
 *.csv
 *.parquet
-winutils/bin/
+
 # Generated output
 output/
 
