@@ -9,16 +9,16 @@ from pyspark.sql.window import Window
 
 # Reading a partitioned Parquet directory on Windows needs winutils.exe +
 # hadoop.dll, because Hadoop's native IO does the directory listing. Same
-# bootstrap as spark_storage.py.
+# bootstrap as convert_to_parquet.py.
 if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parents[2] / "winutils"
+    winutils_dir = Path(__file__).resolve().parents[1] / "winutils"
     os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
     os.environ["PATH"] = (
         str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
     )
 
 # Resolve the project root so these paths work from any working directory.
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 DATA_PROCESSING = ROOT / "data" / "processing"
 
 # Change path based on file name
@@ -27,7 +27,7 @@ CSV_PATH = str(
 )
 PARQUET_PATH = str(DATA_PROCESSING / "311_Service_Requests_For_2026.parquet")
 
-# Directory of created_month=YYYY-MM/ folders, written by spark_storage.py.
+# Directory of created_month=YYYY-MM/ folders, written by convert_to_parquet.py.
 PARTITIONED_PARQUET_PATH = str(
     DATA_PROCESSING / "311_Service_Requests_For_2026_month_partitioned.parquet"
 )
@@ -196,7 +196,7 @@ if missing_inputs:
     sys.exit(
         "Missing input(s):\n  "
         + "\n  ".join(missing_inputs)
-        + "\nRun spark_clean.py and spark_storage.py first."
+        + "\nRun clean_requests.py and convert_to_parquet.py first."
     )
 
 try:

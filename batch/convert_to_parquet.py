@@ -8,14 +8,14 @@ from pyspark.sql import SparkSession, functions as F
 # Writing local files with Spark on Windows needs winutils.exe + hadoop.dll.
 # They live in the project root under winutils/bin.
 if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parents[2] / "winutils"
+    winutils_dir = Path(__file__).resolve().parents[1] / "winutils"
     os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
     os.environ["PATH"] = (
         str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
     )
 
 # Resolve the project root so these paths work from any working directory.
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSING = ROOT / "data" / "processing"
 
@@ -62,13 +62,13 @@ spark = (
 spark.sparkContext.setLogLevel("WARN")
 
 try:
-    # Read CSV file (all columns as strings, same options as spark_analysis.py)
+    # Read CSV file (all columns as strings, same options as benchmark_layouts.py)
     raw = (
         spark.read
         .option("header", True)
         .option("inferSchema", False)
         .option("mode", "PERMISSIVE")
-        # Values quote-double their internal quotes; see spark_analysis.py.
+        # Values quote-double their internal quotes; see benchmark_layouts.py.
         .option("escape", '"')
         .csv(str(csv_file))
     )

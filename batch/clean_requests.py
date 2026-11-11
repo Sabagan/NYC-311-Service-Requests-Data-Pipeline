@@ -8,7 +8,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
 if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parents[2] / "winutils"
+    winutils_dir = Path(__file__).resolve().parents[1] / "winutils"
     os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
     os.environ["PATH"] = (
         str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
@@ -19,7 +19,7 @@ if sys.platform == "win32":
 # ============================================================
 
 # Resolve the project root so these paths work from any working directory.
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSING = ROOT / "data" / "processing"
 
@@ -405,8 +405,8 @@ assert kept_rows + dropped_rows == total_rows, (
 # ============================================================
 
 # Spark writes one file per partition inside a directory, so a plain write
-# would leave many part files instead of the single CSV that clean.py
-# produces. Coalesce to one partition, write to a temporary directory, then
+# would leave many part files instead of the single CSV that is
+# produced. Coalesce to one partition, write to a temporary directory, then
 # move the one part file into place so the swap is atomic for readers.
 
 # The temporary directory lives in data/raw; the finished CSV is moved to
