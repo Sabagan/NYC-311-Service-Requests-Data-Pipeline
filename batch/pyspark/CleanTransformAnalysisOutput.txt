@@ -1,0 +1,66 @@
+# Spark_Clean:
+
+--- Cleanup report ---
+Raw CSV:                NYC-311-Service-Requests-Data-Pipeline\data\raw\311_Service_Requests_For_2026_Until_20261019.csv
+Clean CSV:              NYC-311-Service-Requests-Data-Pipeline\data\processing\311_Service_Requests_For_2026_Until_20261019_clean.csv
+Rows read:              3,174,685
+Rows dropped:           3,485
+Rows kept:              3,171,200
+Rows kept %:            99.89%
+
+Failures by rule (a row can fail several):
+  empty_row                     0
+  missing_id                    0
+  duplicate_id                  0
+  invalid_created_date          0
+  invalid_borough               3,485
+  missing_agency                0
+                                                                                
+--- Verifying clean CSV ---
+Rows in clean CSV:      3,171,200
+Verification PASSED: all checks satisfied.
+
+# Spark_Storage:
+
+Rows written:           3171200                                                 
+CSV file size:          2595.37 MB
+Parquet file size:      371.89 MB
+Storage reduction:      85.67%
+
+# Spark_Analysis:
+
+===== Complaint types by borough =====
+CSV | Run 1: 15.02 seconds                                                      
+CSV | Run 2: 8.31 seconds                                                       
+CSV | Run 3: 8.34 seconds             
+
+PARQUET | Run 1: 3.48 seconds                                                   
+PARQUET | Run 2: 2.16 seconds                                                   
+PARQUET | Run 3: 2.06 seconds                                                   
+
+CSV Results:  [Row(borough='BRONX', complaint_type='Noise - Residential', count=81442, rank=1), Row(borough='BRONX', complaint_type='Illegal Parking', count=75570, rank=2), Row(borough='BRONX', complaint_type='HEAT/HOT WATER', count=75182, rank=3), Row(borough='BRONX', complaint_type='Noise - Street/Sidewalk', count=47336, rank=4), Row(borough='BRONX', complaint_type='UNSANITARY CONDITION', count=36182, rank=5), Row(borough='BROOKLYN', complaint_type='Illegal Parking', count=196494, rank=1), Row(borough='BROOKLYN', complaint_type='Noise - Residential', count=92710, rank=2), Row(borough='BROOKLYN', complaint_type='HEAT/HOT WATER', count=63321, rank=3), Row(borough='BROOKLYN', complaint_type='Blocked Driveway', count=56395, rank=4), Row(borough='BROOKLYN', complaint_type='Noise - Street/Sidewalk', count=37294, rank=5), Row(borough='MANHATTAN', complaint_type='Illegal Parking', count=58069, rank=1), Row(borough='MANHATTAN', complaint_type='HEAT/HOT WATER', count=53870, rank=2), Row(borough='MANHATTAN', complaint_type='Noise - Residential', count=52008, rank=3), Row(borough='MANHATTAN', complaint_type='Noise - Street/Sidewalk', count=43593, rank=4), Row(borough='MANHATTAN', complaint_type='Encampment', count=27712, rank=5), Row(borough='QUEENS', complaint_type='Illegal Parking', count=155803, rank=1), Row(borough='QUEENS', complaint_type='Noise - Residential', count=65895, rank=2), Row(borough='QUEENS', complaint_type='Blocked Driveway', count=65758, rank=3), Row(borough='QUEENS', complaint_type='Street Condition', count=46036, rank=4), Row(borough='QUEENS', complaint_type='HEAT/HOT WATER', count=28533, rank=5), Row(borough='STATEN ISLAND', complaint_type='Illegal Parking', count=14708, rank=1), Row(borough='STATEN ISLAND', complaint_type='Snow or Ice', count=14056, rank=2), Row(borough='STATEN ISLAND', complaint_type='Noise - Residential', count=9473, rank=3), Row(borough='STATEN ISLAND', complaint_type='Street Condition', count=9183, rank=4), Row(borough='STATEN ISLAND', complaint_type='Damaged Tree', count=5003, rank=5)]
+Parquet Results:  [Row(borough='BRONX', complaint_type='Noise - Residential', count=81442, rank=1), Row(borough='BRONX', complaint_type='Illegal Parking', count=75570, rank=2), Row(borough='BRONX', complaint_type='HEAT/HOT WATER', count=75182, rank=3), Row(borough='BRONX', complaint_type='Noise - Street/Sidewalk', count=47336, rank=4), Row(borough='BRONX', complaint_type='UNSANITARY CONDITION', count=36182, rank=5), Row(borough='BROOKLYN', complaint_type='Illegal Parking', count=196494, rank=1), Row(borough='BROOKLYN', complaint_type='Noise - Residential', count=92710, rank=2), Row(borough='BROOKLYN', complaint_type='HEAT/HOT WATER', count=63321, rank=3), Row(borough='BROOKLYN', complaint_type='Blocked Driveway', count=56395, rank=4), Row(borough='BROOKLYN', complaint_type='Noise - Street/Sidewalk', count=37294, rank=5), Row(borough='MANHATTAN', complaint_type='Illegal Parking', count=58069, rank=1), Row(borough='MANHATTAN', complaint_type='HEAT/HOT WATER', count=53870, rank=2), Row(borough='MANHATTAN', complaint_type='Noise - Residential', count=52008, rank=3), Row(borough='MANHATTAN', complaint_type='Noise - Street/Sidewalk', count=43593, rank=4), Row(borough='MANHATTAN', complaint_type='Encampment', count=27712, rank=5), Row(borough='QUEENS', complaint_type='Illegal Parking', count=155803, rank=1), Row(borough='QUEENS', complaint_type='Noise - Residential', count=65895, rank=2), Row(borough='QUEENS', complaint_type='Blocked Driveway', count=65758, rank=3), Row(borough='QUEENS', complaint_type='Street Condition', count=46036, rank=4), Row(borough='QUEENS', complaint_type='HEAT/HOT WATER', count=28533, rank=5), Row(borough='STATEN ISLAND', complaint_type='Illegal Parking', count=14708, rank=1), Row(borough='STATEN ISLAND', complaint_type='Snow or Ice', count=14056, rank=2), Row(borough='STATEN ISLAND', complaint_type='Noise - Residential', count=9473, rank=3), Row(borough='STATEN ISLAND', complaint_type='Street Condition', count=9183, rank=4), Row(borough='STATEN ISLAND', complaint_type='Damaged Tree', count=5003, rank=5)]
+Results match: True
+
+CSV median: 8.34 seconds
+Parquet median: 2.16 seconds
+
+Speedup: 3.85x
+
+===== Average closure time by agency =====
+CSV | Run 1: 11.18 seconds                                                      
+CSV | Run 2: 9.71 seconds                                                       
+CSV | Run 3: 8.02 seconds                                   
+
+PARQUET | Run 1: 6.78 seconds                                                   
+PARQUET | Run 2: 7.22 seconds                                                   
+PARQUET | Run 3: 6.78 seconds                            
+
+CSV Results:  [Row(agency='DCWP', avg_closure_hours=469.48, closed_request_count=15826), Row(agency='DEP', avg_closure_hours=94.01, closed_request_count=178643), Row(agency='DHS', avg_closure_hours=59.21, closed_request_count=38563), Row(agency='DOB', avg_closure_hours=518.05, closed_request_count=97253), Row(agency='DOE', avg_closure_hours=107.33, closed_request_count=666), Row(agency='DOHMH', avg_closure_hours=558.58, closed_request_count=60151), Row(agency='DOT', avg_closure_hours=176.44, closed_request_count=224250), Row(agency='DPR', avg_closure_hours=394.16, closed_request_count=76897), Row(agency='DSNY', avg_closure_hours=74.92, closed_request_count=294669), Row(agency='HPD', avg_closure_hours=335.55, closed_request_count=628926), Row(agency='NYC311-PRD', avg_closure_hours=138.16, closed_request_count=371), Row(agency='NYPD', avg_closure_hours=2.76, closed_request_count=1372636), Row(agency='OOS', avg_closure_hours=1144.06, closed_request_count=2860), Row(agency='OTI', avg_closure_hours=435.53, closed_request_count=213), Row(agency='TLC', avg_closure_hours=866.54, closed_request_count=10101)]
+Parquet Results:  [Row(agency='DCWP', avg_closure_hours=469.48, closed_request_count=15826), Row(agency='DEP', avg_closure_hours=94.01, closed_request_count=178643), Row(agency='DHS', avg_closure_hours=59.21, closed_request_count=38563), Row(agency='DOB', avg_closure_hours=518.05, closed_request_count=97253), Row(agency='DOE', avg_closure_hours=107.33, closed_request_count=666), Row(agency='DOHMH', avg_closure_hours=558.58, closed_request_count=60151), Row(agency='DOT', avg_closure_hours=176.44, closed_request_count=224250), Row(agency='DPR', avg_closure_hours=394.16, closed_request_count=76897), Row(agency='DSNY', avg_closure_hours=74.92, closed_request_count=294669), Row(agency='HPD', avg_closure_hours=335.55, closed_request_count=628926), Row(agency='NYC311-PRD', avg_closure_hours=138.16, closed_request_count=371), Row(agency='NYPD', avg_closure_hours=2.76, closed_request_count=1372636), Row(agency='OOS', avg_closure_hours=1144.06, closed_request_count=2860), Row(agency='OTI', avg_closure_hours=435.53, closed_request_count=213), Row(agency='TLC', avg_closure_hours=866.54, closed_request_count=10101)]
+Results match: True
+
+CSV median: 9.71 seconds
+Parquet median: 6.78 seconds
+
+Speedup: 1.43x

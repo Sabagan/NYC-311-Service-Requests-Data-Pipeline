@@ -1,13 +1,19 @@
-
 import time
 import statistics
+from pathlib import Path
 
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
+# Resolve the project root so these paths work from any working directory.
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PROCESSING = ROOT / "data" / "processing"
+
 # Change path based on file name
-CSV_PATH = "311_Service_Requests_For_2026_Until_20261019_clean.csv"
-PARQUET_PATH = "311_Service_Requests_For_2026.parquet"
+CSV_PATH = str(
+    DATA_PROCESSING / "311_Service_Requests_For_2026_Until_20261019_clean.csv"
+)
+PARQUET_PATH = str(DATA_PROCESSING / "311_Service_Requests_For_2026.parquet")
 REPEATS = 3
 
 spark = (

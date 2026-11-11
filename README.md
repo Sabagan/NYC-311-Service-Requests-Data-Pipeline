@@ -11,10 +11,17 @@ NYC Open Data (no restrictions on use; free public download), Terms of Use: http
 2. How long does each agency take to close a request, on average? (batch)
 3. How many noise complaints came in per hour in each ZIP code tonight? (stream)
 
+## Directory Layout
+- `batch/pandas/` - `clean.py` and `storage.py` (Pandas implementations)
+- `batch/pyspark/` - `spark_clean.py`, `spark_storage.py` and `spark_analysis.py` (PySpark implementations)
+- `data/raw/` - the downloaded CSV and temporary build files
+- `data/processing/` - the cleaned CSV and Parquet files produced by the batch scripts
+- `streaming/` - the Kafka producer, consumer and replay preparation scripts
+
 ## Storage
-- Download the CSV from Open Data NYC, containing all 2026 data until present data, then used the storage.py or spark_storage.py to convert to Parquet (can compare both scripts to test performance in converting to Parquet using Pandas vs PySpark)
+- Download the CSV from Open Data NYC, containing all 2026 data until present data, then used the batch/pandas/storage.py or batch/pyspark/spark_storage.py to convert to Parquet (can compare both scripts to test performance in converting to Parquet using Pandas vs PySpark)
 
 More depth: adding a month-partitioned layout to the comparison would give the deep part more to explain; read only the columns you need from the 2.7 GB CSV.
 
 ## Spark-based Analysis
-We will compare the performance of CSV vs Parquet in answering the first two (batch) questions
+We will compare the performance of CSV vs Parquet in answering the first two (batch) questions, using batch/pyspark/spark_analysis.py

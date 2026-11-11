@@ -1,5 +1,3 @@
-
-import csv
 import os
 import sys
 import shutil
@@ -10,7 +8,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
 if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parent / "winutils"
+    winutils_dir = Path(__file__).resolve().parents[2] / "winutils"
     os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
     os.environ["PATH"] = (
         str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
@@ -20,8 +18,15 @@ if sys.platform == "win32":
 # 1. CONFIGURATION
 # ============================================================
 
-raw_csv = Path("311_Service_Requests_For_2026_Until_20261019.csv")
-clean_csv = Path("311_Service_Requests_For_2026_Until_20261019_clean.csv")
+# Resolve the project root so these paths work from any working directory.
+ROOT = Path(__file__).resolve().parents[2]
+DATA_RAW = ROOT / "data" / "raw"
+DATA_PROCESSING = ROOT / "data" / "processing"
+
+raw_csv = DATA_RAW / "311_Service_Requests_For_2026_Until_20261019.csv"
+clean_csv = (
+    DATA_PROCESSING / "311_Service_Requests_For_2026_Until_20261019_clean.csv"
+)
 
 valid_boroughs = [
     "BRONX",
@@ -404,7 +409,10 @@ assert kept_rows + dropped_rows == total_rows, (
 # produces. Coalesce to one partition, write to a temporary directory, then
 # move the one part file into place so the swap is atomic for readers.
 
-temp_dir = str(clean_csv) + ".part"
+# The temporary directory lives in data/raw; the finished CSV is moved to
+# data/processing.
+DATA_PROCESSING.mkdir(parents=True, exist_ok=True)
+temp_dir = str(DATA_RAW / (clean_csv.name + ".part"))
 
 if os.path.exists(temp_dir):
     shutil.rmtree(temp_dir)

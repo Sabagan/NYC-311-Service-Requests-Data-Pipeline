@@ -5,8 +5,15 @@ from pathlib import Path
 
 import pandas as pd
 
-raw_csv = Path("311_Service_Requests_For_2026_Until_20261019.csv")
-clean_csv = Path("311_Service_Requests_For_2026_Until_20261019_clean.csv")
+# Resolve the project root so these paths work from any working directory.
+ROOT = Path(__file__).resolve().parents[2]
+DATA_RAW = ROOT / "data" / "raw"
+DATA_PROCESSING = ROOT / "data" / "processing"
+
+raw_csv = DATA_RAW / "311_Service_Requests_For_2026_Until_20261019.csv"
+clean_csv = (
+    DATA_PROCESSING / "311_Service_Requests_For_2026_Until_20261019_clean.csv"
+)
 
 chunk_size = 250_000
 
@@ -218,9 +225,10 @@ total_rows = 0
 kept_rows = 0
 dates_normalized = 0
 
-# Write to a temp file, then swap it in, so an interrupted run never
-# leaves a half-written CSV that looks valid.
-temp_csv = clean_csv.with_name(clean_csv.name + ".part")
+# Write to a temp file in data/raw, then swap it in, so an interrupted run
+# never leaves a half-written CSV that looks valid.
+DATA_PROCESSING.mkdir(parents=True, exist_ok=True)
+temp_csv = DATA_RAW / (clean_csv.name + ".part")
 
 try:
     with open(temp_csv, "w", encoding="utf-8", newline="") as handle:

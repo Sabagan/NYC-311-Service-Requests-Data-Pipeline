@@ -6,20 +6,28 @@ from pathlib import Path
 from pyspark.sql import SparkSession
 
 # Writing local files with Spark on Windows needs winutils.exe + hadoop.dll.
-# They live next to this script under winutils/bin.
+# They live in the project root under winutils/bin.
 if sys.platform == "win32":
-    winutils_dir = Path(__file__).resolve().parent / "winutils"
+    winutils_dir = Path(__file__).resolve().parents[2] / "winutils"
     os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
     os.environ["PATH"] = (
         str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
     )
 
-# Input and output file paths
-csv_file = Path("311_Service_Requests_For_2026_Until_20261019_clean.csv")
-parquet_file = Path("311_Service_Requests_For_2026.parquet")
+# Resolve the project root so these paths work from any working directory.
+ROOT = Path(__file__).resolve().parents[2]
+DATA_RAW = ROOT / "data" / "raw"
+DATA_PROCESSING = ROOT / "data" / "processing"
 
-# Spark writes to a directory, so build via a temp dir and keep one file
-temp_dir = Path("311_Service_Requests_For_2026_temp")
+# Input and output file paths
+csv_file = (
+    DATA_PROCESSING / "311_Service_Requests_For_2026_Until_20261019_clean.csv"
+)
+parquet_file = DATA_PROCESSING / "311_Service_Requests_For_2026.parquet"
+
+# Spark writes to a directory, so build via a temp dir in data/raw and keep one
+# file in data/processing
+temp_dir = DATA_RAW / "311_Service_Requests_For_2026_temp"
 
 spark = (
     SparkSession.builder
@@ -56,6 +64,7 @@ try:
         p for p in temp_dir.iterdir()
         if p.name.startswith("part-") and p.name.endswith(".parquet")
     )
+    DATA_PROCESSING.mkdir(parents=True, exist_ok=True)
     shutil.move(str(part_file), str(parquet_file))
     shutil.rmtree(temp_dir)
 
