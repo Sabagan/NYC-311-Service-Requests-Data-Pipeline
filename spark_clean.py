@@ -80,21 +80,40 @@ spark.sparkContext.setLogLevel("WARN")
 
 
 # ============================================================
-# 3. CHECK INPUT FILE
+# 3. CSV PARSE OPTIONS
+# ============================================================
+
+# The CSV quotes fields RFC 4180 style: a quote inside a value is written as
+# two quotes. Spark escapes with a backslash by default, so those values
+# would split at their quotes and shift the rest of the row one column left
+# (e.g. Police Precinct "Precinct 112" landing in the Borough column).
+#
+# Every read must use these options, including the verification re-read:
+# reading the same file two ways makes the output look corrupt when it is not.
+
+csv_read_options = {
+    "header": True,
+    "inferSchema": False,
+    "encoding": "UTF-8",
+    "mode": "PERMISSIVE",
+    "quote": '"',
+    "escape": '"',
+}
+
+
+def read_csv(path):
+    return spark.read.options(**csv_read_options).csv(str(path))
+
+
+# ============================================================
+# 4. CHECK INPUT FILE
 # ============================================================
 
 if not raw_csv.is_file():
     sys.exit(f"Input file not found: {raw_csv}")
 
 # Read header only.
-header = (
-    spark.read
-    .option("header", True)
-    .option("encoding", "UTF-8")
-    .csv(str(raw_csv))
-    .limit(0)
-    .columns
-)
+header = read_csv(raw_csv).limit(0).columns
 
 missing = [c for c in required_columns if c not in header]
 
@@ -106,19 +125,10 @@ if missing:
 
 
 # ============================================================
-# 4. READ RAW CSV
+# 5. READ RAW CSV
 # ============================================================
 
-df = (
-    spark.read
-    .option("header", True)
-    .option("inferSchema", False)
-    .option("encoding", "UTF-8")
-    .option("mode", "PERMISSIVE")
-    .option("quote", '"')
-    .option("escape", '"')
-    .csv(str(raw_csv))
-)
+df = read_csv(raw_csv)
 
 # Ensure all fields are strings and preserve original columns.
 df = df.select(
@@ -127,7 +137,7 @@ df = df.select(
 
 
 # ============================================================
-# 5. NORMALIZE TEXT FIELDS
+# 6. NORMALIZE TEXT FIELDS
 # ============================================================
 
 for column in header:
@@ -156,7 +166,7 @@ df = (
 
 
 # ============================================================
-# 6. PARSE AND NORMALIZE TIMESTAMPS
+# 7. PARSE AND NORMALIZE TIMESTAMPS
 # ============================================================
 
 # Try the canonical timestamp format first.
@@ -219,7 +229,7 @@ df = (
 
 
 # ============================================================
-# 7. IDENTIFY DATA-QUALITY FAILURES
+# 8. IDENTIFY DATA-QUALITY FAILURES
 # ============================================================
 
 # Empty row: every original column is blank.
@@ -246,7 +256,7 @@ invalid_created_date = (
 
 
 # ============================================================
-# 8. IDENTIFY DUPLICATE IDS
+# 9. IDENTIFY DUPLICATE IDS
 # ============================================================
 
 # Window ordering preserves the first occurrence according
@@ -289,7 +299,7 @@ df = df.withColumn(
 )
 
 # ============================================================
-# 9. BUILD FAILURE FLAGS
+# 10. BUILD FAILURE FLAGS
 # ============================================================
 
 df = (
@@ -329,7 +339,7 @@ clean_df = df.filter(keep_condition)
 
 
 # ============================================================
-# 10. COUNT FAILURES
+# 11. COUNT FAILURES
 # ============================================================
 
 failure_expressions = [
@@ -386,7 +396,7 @@ assert kept_rows + dropped_rows == total_rows, (
 
 
 # ============================================================
-# 11. WRITE CLEAN CSV
+# 12. WRITE CLEAN CSV
 # ============================================================
 
 # Spark writes CSV output as a directory containing part files.
@@ -427,16 +437,10 @@ finally:
 
 
 # ============================================================
-# 12. VERIFY CLEAN DATASET
+# 13. VERIFY CLEAN DATASET
 # ============================================================
 
-verify_df = (
-    spark.read
-    .option("header", True)
-    .option("inferSchema", False)
-    .option("encoding", "UTF-8")
-    .csv(output_dir)
-)
+verify_df = read_csv(output_dir)
 
 verify_df = verify_df.select(
     *[F.col(c).cast("string").alias(c) for c in header]
@@ -541,7 +545,7 @@ else:
     print("Verification PASSED: all checks satisfied.")
 
 # ============================================================
-# 13. FINISH
+# 14. FINISH
 # ============================================================
 
 spark.stop()
