@@ -15,13 +15,13 @@ NYC Open Data (no restrictions on use; free public download), Terms of Use: http
 - `batch/pandas/` - `clean.py` and `storage.py` (Pandas implementations)
 - `batch/pyspark/` - `spark_clean.py`, `spark_storage.py` and `spark_analysis.py` (PySpark implementations)
 - `data/raw/` - the downloaded CSV and temporary build files
-- `data/processing/` - the cleaned CSV and Parquet files produced by the batch scripts
+- `data/processing/` - the cleaned CSV, the single-file Parquet, and the month-partitioned Parquet directory produced by the batch scripts
 - `streaming/` - the Kafka producer, consumer and replay preparation scripts
 
 ## Storage
 - Download the CSV from Open Data NYC, containing all 2026 data until present data, then used the batch/pandas/storage.py or batch/pyspark/spark_storage.py to convert to Parquet (can compare both scripts to test performance in converting to Parquet using Pandas vs PySpark)
 
-More depth: adding a month-partitioned layout to the comparison would give the deep part more to explain; read only the columns you need from the 2.7 GB CSV.
+`batch/pyspark/spark_storage.py` also writes a month-partitioned Parquet dataset at `data/processing/311_Service_Requests_For_2026_month_partitioned.parquet/`, laid out as `created_month=YYYY-MM/part-*.parquet`. Spark discovers `created_month` from the folder names, so a query that filters on it reads only the matching months (partition pruning), and the size trade-off against the single-file Parquet is reported next to it.
 
 ## Spark-based Analysis
-We will compare the performance of CSV vs Parquet in answering the first two (batch) questions, using batch/pyspark/spark_analysis.py
+We will compare the performance of CSV vs Parquet vs month-partitioned Parquet in answering the first two (batch) questions, using batch/pyspark/spark_analysis.py

@@ -1,9 +1,21 @@
+import os
+import sys
 import time
 import statistics
 from pathlib import Path
 
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
+
+# Reading a partitioned Parquet directory on Windows needs winutils.exe +
+# hadoop.dll, because Hadoop's native IO does the directory listing. Same
+# bootstrap as spark_storage.py.
+if sys.platform == "win32":
+    winutils_dir = Path(__file__).resolve().parents[2] / "winutils"
+    os.environ.setdefault("HADOOP_HOME", str(winutils_dir))
+    os.environ["PATH"] = (
+        str(winutils_dir / "bin") + os.pathsep + os.environ["PATH"]
+    )
 
 # Resolve the project root so these paths work from any working directory.
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,7 +26,24 @@ CSV_PATH = str(
     DATA_PROCESSING / "311_Service_Requests_For_2026_Until_20261019_clean.csv"
 )
 PARQUET_PATH = str(DATA_PROCESSING / "311_Service_Requests_For_2026.parquet")
+
+# Directory of created_month=YYYY-MM/ folders, written by spark_storage.py.
+PARTITIONED_PARQUET_PATH = str(
+    DATA_PROCESSING / "311_Service_Requests_For_2026_month_partitioned.parquet"
+)
+
 REPEATS = 3
+
+# Every layout the same queries run against: (label, loader format, path).
+DATASETS = [
+    ("CSV", "csv", CSV_PATH),
+    ("Parquet", "parquet", PARQUET_PATH),
+    (
+        "Month-partitioned Parquet",
+        "parquet_month_partitioned",
+        PARTITIONED_PARQUET_PATH,
+    ),
+]
 
 spark = (
     SparkSession.builder
@@ -40,7 +69,10 @@ def load_data(path, file_format):
             .option("escape", '"')
             .csv(path)
         )
-    elif file_format == "parquet":
+    elif file_format in ("parquet", "parquet_month_partitioned"):
+        # The partitioned layout is read exactly like the single file; Spark
+        # discovers created_month from the folder names, so a query that
+        # filters on it reads only the matching months (partition pruning).
         raw = spark.read.parquet(path)
     else:
         raise ValueError(f"Unsupported format: {file_format}")
@@ -134,7 +166,7 @@ def question_2(df):
     )
 
 
-def benchmark(path, file_format, query_function):
+def benchmark(path, file_format, label, query_function):
     timings = []
     result = None
 
@@ -148,11 +180,7 @@ def benchmark(path, file_format, query_function):
         elapsed = time.perf_counter() - start
         timings.append(elapsed)
 
-        print(
-            f"{file_format.upper()} | Run {run + 1}: "
-            f"{elapsed:.2f} seconds"
-            # f" - {result}"
-        )
+        print(f"{label} | Run {run + 1}: {elapsed:.2f} seconds")
 
     return result, statistics.median(timings)
 
@@ -162,6 +190,15 @@ def normalize_result(rows):
     return sorted(tuple(row) for row in rows)
 
 
+missing_inputs = [path for _, _, path in DATASETS if not Path(path).exists()]
+
+if missing_inputs:
+    sys.exit(
+        "Missing input(s):\n  "
+        + "\n  ".join(missing_inputs)
+        + "\nRun spark_clean.py and spark_storage.py first."
+    )
+
 try:
     for query_name, query_function in [
         ("Complaint types by borough", question_1),
@@ -169,27 +206,44 @@ try:
     ]:
         print(f"\n===== {query_name} =====")
 
-        csv_result, csv_time = benchmark(
-            CSV_PATH, "csv", query_function
-        )
+        results = {}
+        medians = {}
 
-        parquet_result, parquet_time = benchmark(
-            PARQUET_PATH, "parquet", query_function
-        )
+        for label, file_format, path in DATASETS:
+            result, median = benchmark(
+                path, file_format, label, query_function
+            )
+            results[label] = result
+            medians[label] = median
 
-        print("CSV Results: ", csv_result)
-        print("Parquet Results: ", parquet_result)
-        
-        print(
-            "Results match:",
-            normalize_result(csv_result)
-            == normalize_result(parquet_result)
-        )
-        print(f"CSV median: {csv_time:.2f} seconds")
-        print(f"Parquet median: {parquet_time:.2f} seconds")
+        for label in medians:
+            print(f"{label} Results: ", results[label])
 
-        if parquet_time > 0:
-            print(f"Speedup: {csv_time / parquet_time:.2f}x")
+        csv_normalized = normalize_result(results["CSV"])
+
+        for label in medians:
+            print(
+                f"{label} results match CSV:",
+                normalize_result(results[label]) == csv_normalized
+            )
+
+        for label in medians:
+            print(f"{label} median: {medians[label]:.2f} seconds")
+
+        csv_time = medians["CSV"]
+
+        for label in medians:
+            if label != "CSV" and medians[label] > 0:
+                print(
+                    f"Speedup (CSV -> {label}): "
+                    f"{csv_time / medians[label]:.2f}x"
+                )
+
+        if medians["Parquet"] > 0 and medians["Month-partitioned Parquet"] > 0:
+            print(
+                "Speedup (Parquet -> month-partitioned Parquet): "
+                f"{medians['Parquet'] / medians['Month-partitioned Parquet']:.2f}x"
+            )
 
 finally:
     spark.stop()
