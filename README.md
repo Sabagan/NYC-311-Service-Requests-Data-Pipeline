@@ -37,7 +37,9 @@ Download the NYC Open Data CSV containing the 2026 records, then use `src/batch/
 - Python 3.12 and packages listed in `requirements.txt`.
 - Java 21 for the tested PySpark environment.
 - Docker Desktop with Docker Compose, for Kafka.
-- On Windows, Hadoop support files in `bin/` and a correctly configured `HADOOP_HOME`.
+- On Windows, Hadoop support files in the project's `bin/`. The shared configuration points `HADOOP_HOME` at the project root and adds `bin/` to `PATH` before Python starts Spark.
+
+All script data and output paths are resolved from the source file locations, not the terminal's working directory. Batch and streaming scripts share `src/config/spark_config.py`. Keep `bin/winutils.exe` and `bin/hadoop.dll` with the project when moving it.
 
 Install the Python packages from the project root:
 
@@ -65,60 +67,32 @@ data/processing/311_Service_Requests_For_2026.parquet
 
 This dataset file may be excluded from Git because of its size. Prepare it using the batch processing scripts or place an equivalent dataset at this path before running the replay.
 
-### Run on Windows (PowerShell)
+### Run with Docker (Windows, macOS, or Linux)
 
-Run the following commands from the repository root.
+Start Docker Desktop, place the input Parquet at the path above, and run from the repository root:
 
-1. Start Kafka:
+```powershell
+docker compose up --build --abort-on-container-exit --exit-code-from streaming
+```
 
-   ```powershell
-   docker compose up -d
-   ```
+Compose waits for Kafka to become healthy. The streaming container prepares SQLite,
+produces all records, then runs the Spark consumer and exports `output/hourly_noise_full.csv`.
+The command stops Kafka when streaming finishes and returns the streaming exit code.
+The first run downloads the image, Python dependencies, and Spark Kafka connector.
+No host Python, Java, or Windows Hadoop configuration is needed for this Docker run.
 
-2. Configure Windows Hadoop and PySpark for the terminal session:
+Each invocation creates a new topic and isolated SQLite/checkpoint directory in the
+`stream-runs` volume. This is a fresh full replay, not a resume. The final CSV is
+replaced on success. Previous run state and Kafka topics remain in Docker volumes.
+Do not run multiple copies concurrently because they share the final CSV path.
 
-   ```powershell
-   $env:HADOOP_HOME = (Get-Location).Path
-   $env:PATH = "$env:HADOOP_HOME\bin;$env:PATH"
-   $env:PYSPARK_PYTHON = (Get-Command python).Source
-   $env:PYSPARK_DRIVER_PYTHON = $env:PYSPARK_PYTHON
-   ```
+To remove containers while retaining run data: `docker compose down`.
+To discard all Docker replay state and Kafka data: `docker compose down -v`.
+The latter does not delete your mounted Parquet input or output CSV.
 
-3. Prepare a local SQLite database sorted by the complaint creation date:
-
-   ```powershell
-   python src/stream/prepare_replay.py
-   ```
-
-4. Create the Kafka topic with one partition, if it doesn't exist:
-
-   ```powershell
-   docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --topic nyc311-replay-full --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
-   ```
-
-   **Important:** Use an empty topic for each full replay. Re-running the producer on the same populated topic duplicates the complaint records.
-
-5. Send complaints to Kafka:
-
-   ```powershell
-   python src/stream/producer.py
-   ```
-
-6. Check the Kafka ending offset:
-
-   ```powershell
-   docker compose exec kafka /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server localhost:9092 --topic nyc311-replay-full
-   ```
-
-7. Run Spark's streaming consumer:
-
-   ```powershell
-   spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.3.0 src/stream/consumer.py
-   ```
-
-   The consumer uses `availableNow=True`, processes the current Kafka backlog in micro-batches, saves intermediate counts to local SQLite, and exports a final CSV when successful. Spark checkpoints are maintained at `src/stream/checkpoints/hourly_noise_full/`.
-
-   If re-running with an existing checkpoint, keep its associated SQLite state. For a completely new replay, use new Kafka topic/output/checkpoint locations or carefully reset all of those together. Do not mix an old checkpoint with a new empty SQLite database.
+The Docker image uses Linux Hadoop support; `bin/` remains the shared Windows
+Hadoop setup for running scripts directly on Windows. Compose Kafka now advertises
+its internal service address, so this configuration is intended for the container pipeline.
 
 ### Output
 
@@ -146,4 +120,4 @@ Each row describes one ZIP code during one hour. An absent ZIP-hour combination 
 
 The expected count came from the sorted source records, and the actual count was calculated by summing `noise_count` in the results. These totals matched. Matching totals alone does not prove that every individual ZIP-hour count is correct.
 
-See `src/stream/streaming_analysis_output.txt` for the full-run summary. 
+See `src/stream/streaming_analysis_output.txt` for the full-run summary.

@@ -1,7 +1,7 @@
-"""Shared configuration for the batch Spark scripts.
+"""Shared paths and Windows Hadoop configuration for the pipeline.
 
 The project paths and the Windows Hadoop bootstrap live here so each script
-imports them instead of repeating the setup. Every script calls
+imports them instead of repeating the setup. Every Spark script calls
 configure_hadoop() once, before it builds its SparkSession.
 """
 
@@ -14,6 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSING = ROOT / "data" / "processing"
+STREAM_DIR = Path(os.environ.get("STREAM_STATE_DIR", ROOT / "src" / "stream"))
+OUTPUT_DIR = ROOT / "output"
 
 # Writing local files with Spark on Windows needs winutils.exe + hadoop.dll.
 # They live in bin/ at the project root, so HADOOP_HOME points there and
@@ -26,5 +28,15 @@ def configure_hadoop():
     if sys.platform != "win32":
         return
 
-    os.environ.setdefault("HADOOP_HOME", str(ROOT))
-    os.environ["PATH"] = str(BIN_DIR) + os.pathsep + os.environ["PATH"]
+    for name in ("winutils.exe", "hadoop.dll"):
+        if not (BIN_DIR / name).is_file():
+            raise FileNotFoundError(f"Missing bundled Hadoop file: {BIN_DIR / name}")
+
+    # Hadoop appends bin/ itself; HADOOP_HOME must be the project root.
+    os.environ["HADOOP_HOME"] = str(ROOT)
+    entries = os.environ.get("PATH", "").split(os.pathsep)
+    os.environ["PATH"] = os.pathsep.join(
+        [str(BIN_DIR)] + [entry for entry in entries if entry != str(BIN_DIR)]
+    )
+    os.environ["PYSPARK_PYTHON"] = sys.executable
+    os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable

@@ -2,12 +2,13 @@
 from pathlib import Path
 from datetime import datetime
 import sqlite3
+import sys
 import pyarrow.parquet as pq
 
-ROOT = Path(__file__).resolve().parents[2]
-STREAM_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config.spark_config import DATA_PROCESSING, STREAM_DIR
 
-PARQUET_PATH = ROOT / "data" / "processing" / "311_Service_Requests_For_2026.parquet"
+PARQUET_PATH = DATA_PROCESSING / "311_Service_Requests_For_2026.parquet"
 DB_PATH = STREAM_DIR / "events_sorted.sqlite"
 
 DATE_FORMAT = "%m/%d/%Y %I:%M:%S %p"
@@ -20,6 +21,9 @@ columns = [
 ]
 
 # Rebuild our temporary sorting database
+if not PARQUET_PATH.is_file():
+    raise FileNotFoundError(f"Replay input not found: {PARQUET_PATH}")
+
 DB_PATH.unlink(missing_ok=True)
 
 conn = sqlite3.connect(DB_PATH)

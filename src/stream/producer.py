@@ -1,17 +1,23 @@
+import os
 
 from kafka import KafkaProducer
 from pathlib import Path
 import sqlite3
 import json
+import sys
 
-STREAM_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config.spark_config import STREAM_DIR
+
 DB_PATH = STREAM_DIR / "events_sorted.sqlite"
+if not DB_PATH.is_file():
+    raise FileNotFoundError(f"Replay database not found: {DB_PATH}. Run prepare_replay.py first.")
 
-TOPIC = "nyc311-replay-full"
+TOPIC = os.environ.get("KAFKA_TOPIC", "nyc311-replay-full")
 MAX_EVENTS = None
 
 producer = KafkaProducer(
-    bootstrap_servers="localhost:9092",
+    bootstrap_servers=os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
     acks="all",
     value_serializer=lambda v: json.dumps(v).encode("utf-8")
 )

@@ -1,0 +1,9 @@
+.git
+.venv
+.validation
+data
+output
+bin
+**/__pycache__
+**/*.sqlite*
+**/checkpoints
