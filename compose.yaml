@@ -3,3 +3,23 @@ services:
     image: apache/kafka:4.1.2
     ports:
       - "9092:9092"
+
+  # Batch pipeline (Part 1). It has its own profile so a plain
+  # `docker compose up -d` starts only Kafka.
+  batch:
+    build: .
+    image: nyc311-batch
+    profiles: ["batch"]
+    working_dir: /app
+    # The project directory is mounted so the scripts read and write data/ on
+    # the host, exactly like a local run.
+    volumes:
+      - .:/app
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        python src/batch/clean_requests.py
+        python src/batch/convert_to_parquet.py
+        python src/batch/benchmark_layouts.py
