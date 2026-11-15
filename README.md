@@ -1,8 +1,65 @@
 # NYC 311 Service Requests Data Pipeline
 
+A PySpark batch pipeline (Part 1) and a Kafka + Spark Structured Streaming
+pipeline (Part 2) over NYC 311 service requests.
+
+## Quick Start: Batch Pipeline (Part 1, Docker)
+
+Part 1 (cleaning, Parquet conversion, and the layout benchmark) runs entirely
+in Docker Desktop. The 2026 CSV ships with the project in `data/raw/` (it is too
+large for Git), so from a fresh copy of the repository, with Docker Desktop
+running:
+
+```bash
+docker compose build batch
+docker compose run --rm batch
+```
+
+The container then runs the three batch scripts in order:
+
+1. `src/batch/clean_requests.py` – validates the rows and writes one clean CSV.
+2. `src/batch/convert_to_parquet.py` – writes the single-file and the
+   month-partitioned Parquet datasets.
+3. `src/batch/benchmark_layouts.py` – answers Q1 and Q2 against CSV, Parquet,
+   and month-partitioned Parquet, and prints the timings, the correctness
+   comparison, and the speedups.
+
+Every run repeats all three steps over the raw CSV (~3.2M rows), so allow
+15–60 minutes depending on the machine. The repository directory is mounted into
+the container, so everything the scripts write lands on the host in `data/`
+exactly as it does for a local run.
+
+Give Docker Desktop at least 8 GB of memory: the Spark driver is configured for
+4 GB in the image.
+
+Run a single step, for example only the benchmark:
+
+```bash
+docker compose run --rm batch python src/batch/benchmark_layouts.py
+```
+
+### Input dataset
+
+The batch scripts read this file:
+
+```text
+data/raw/311_Service_Requests_For_2026_Until_20261019.csv
+```
+
+It is the NYC Open Data CSV of 2026 service requests created from 2026-01-01 to
+2026-10-19 (~2.8 GB) and it is included in this copy of the project under
+`data/raw/`. If it is missing, download the CSV from the dataset link below and
+save it under exactly that name; the pipeline stops with an `Input file not
+found` message otherwise.
+
 ## Dataset
 
 [NYC 311 Service Requests from 2020 to Present](https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2020-to-Present/erm2-nwe9/about_data)
+
+The pipeline uses records created between 2026-01-01 and 2026-10-19 from that
+dataset. The portal's CSV download for that date range is the file kept at
+`data/raw/311_Service_Requests_For_2026_Until_20261019.csv`, with the portal's
+human-readable column names, which is what the batch scripts expect.
 
 ## License
 
@@ -19,37 +76,53 @@ NYC Open Data (no restrictions on use; free public download). [Terms of Use](htt
 - `src/batch/` – `clean_requests.py`, `convert_to_parquet.py`, and `benchmark_layouts.py` (PySpark implementations), plus their run output.
 - `src/config/` – `spark_config.py`, shared project paths, and Windows Hadoop setup.
 - `src/stream/` – `prepare_replay.py`, `producer.py`, and `consumer.py`, plus `streaming_analysis_output.txt` containing streaming results and verification. Local SQLite state and Spark checkpoints are generated here.
-- `bin/` – `winutils.exe` and `hadoop.dll`, the Windows Hadoop files used by Spark.
-- `data/raw/` – the downloaded CSV and temporary build files.
+- `bin/` – `winutils.exe` and `hadoop.dll`, the Windows Hadoop files used by Spark on Windows only.
+- `data/raw/` – the original CSV and temporary build files.
 - `data/processing/` – cleaned CSV, single-file Parquet, and month-partitioned Parquet directory produced by the batch scripts.
 - `output/` – final streaming output, `hourly_noise_full.csv` (when generated or shared with the repository).
-- `compose.yaml` – Docker Compose configuration for Kafka.
+- `compose.yaml` – Docker Compose configuration: Kafka, and the `batch` service.
+- `Dockerfile` – Python 3.12 + Java 17 + PySpark image for the batch pipeline.
 - `requirements.txt` – Python dependencies.
 
 ## Storage
 
-Download the NYC Open Data CSV containing the 2026 records, then use `src/batch/convert_to_parquet.py` to convert it to Parquet.
+`src/batch/clean_requests.py` cleans the raw CSV from `data/raw/`, and
+`src/batch/convert_to_parquet.py` converts the cleaned CSV to Parquet.
 
 `src/batch/convert_to_parquet.py` also writes a month-partitioned Parquet dataset at `data/processing/311_Service_Requests_For_2026_month_partitioned.parquet/`, laid out as `created_month=YYYY-MM/part-*.parquet`. Spark discovers `created_month` from the folder names, so a query that filters on it reads only the matching months (partition pruning). The size trade-off against the single-file Parquet is reported next to it.
 
 ## Requirements
 
+For the Docker path (recommended): Docker Desktop with Docker Compose and at
+least 8 GB of memory allocated.
+
+For running the batch scripts directly on a host instead:
+
 - Python 3.12 and packages listed in `requirements.txt`.
-- Java 21 for the tested PySpark environment.
-- Docker Desktop with Docker Compose, for Kafka.
-- On Windows, Hadoop support files in `bin/` and a correctly configured `HADOOP_HOME`.
+- Java 17 or newer for PySpark 4.x (Java 21 for the tested Windows environment).
+- On Windows, Hadoop support files in `bin/` and a correctly configured
+  `HADOOP_HOME`; the container does not need them.
 
-Install the Python packages from the project root:
-
-```powershell
+```bash
 python -m pip install -r requirements.txt
 ```
 
-If other batch or PostgreSQL scripts require additional Python packages, add them to `requirements.txt` before final team submission.
-
 ## Spark-based Analysis (Batch: Q1 and Q2)
 
-The batch scripts in `src/batch/` support comparison of CSV, single-file Parquet, and month-partitioned Parquet while answering the first two questions. See the scripts and their run output for the benchmark results.
+Q1 and Q2 are answered by `src/batch/benchmark_layouts.py`, which runs the same
+queries against the CSV, the single-file Parquet, and the month-partitioned
+Parquet, three times each, and compares both the results and the timings.
+
+The Docker command from Quick Start does this for you:
+
+```bash
+docker compose run --rm batch python src/batch/benchmark_layouts.py
+```
+
+For a host run, execute the three scripts in `src/batch/` in order
+(`clean_requests.py`, `convert_to_parquet.py`, `benchmark_layouts.py`). See
+`src/batch/cleaning_analysis_output.txt` for a recorded full run, including the
+measured results and speedups.
 
 ## Kafka + Spark Structured Streaming (Q3)
 
@@ -59,11 +132,11 @@ The streaming pipeline replays historical NYC 311 complaints to Kafka and uses S
 
 `src/stream/prepare_replay.py` expects the Parquet input at:
 
-```
+```text
 data/processing/311_Service_Requests_For_2026.parquet
 ```
 
-This dataset file may be excluded from Git because of its size. Prepare it using the batch processing scripts or place an equivalent dataset at this path before running the replay.
+This dataset file may be excluded from Git because of its size. Prepare it using the batch pipeline (Part 1 above) or place an equivalent dataset at this path before running the replay.
 
 ### Run on Windows (PowerShell)
 
@@ -146,4 +219,4 @@ Each row describes one ZIP code during one hour. An absent ZIP-hour combination 
 
 The expected count came from the sorted source records, and the actual count was calculated by summing `noise_count` in the results. These totals matched. Matching totals alone does not prove that every individual ZIP-hour count is correct.
 
-See `src/stream/streaming_analysis_output.txt` for the full-run summary. 
+See `src/stream/streaming_analysis_output.txt` for the full-run summary.
