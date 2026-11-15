@@ -15,6 +15,11 @@ docker compose build batch
 docker compose run --rm batch
 ```
 
+OR use a single command, which builds the image if needed, runs the batch service, and removes the container when finished:
+```bash
+docker compose --profile batch run --build --rm batch
+```
+
 The container then runs the three batch scripts in order:
 
 1. `src/batch/clean_requests.py` – validates the rows and writes one clean CSV.
