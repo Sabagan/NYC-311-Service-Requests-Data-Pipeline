@@ -1,17 +1,21 @@
+import os
 
 import csv
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json, to_timestamp, trim, window
 from pyspark.sql.types import StructType, StructField, StringType
 
-STREAM_DIR = Path(__file__).resolve().parent
-ROOT = STREAM_DIR.parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from config.spark_config import OUTPUT_DIR, STREAM_DIR, configure_hadoop
+
+configure_hadoop()
 
 STATE_DB = STREAM_DIR / "hourly_noise_full.sqlite"
-OUTPUT_CSV = ROOT / "output" / "hourly_noise_full.csv"
+OUTPUT_CSV = OUTPUT_DIR / "hourly_noise_full.csv"
 CHECKPOINT_PATH = STREAM_DIR / "checkpoints" / "hourly_noise_full"
 
 OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
@@ -43,8 +47,8 @@ schema = StructType([
 kafka_stream = (
     spark.readStream
     .format("kafka")
-    .option("kafka.bootstrap.servers", "localhost:9092")
-    .option("subscribe", "nyc311-replay-full")
+    .option("kafka.bootstrap.servers", os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"))
+    .option("subscribe", os.environ.get("KAFKA_TOPIC", "nyc311-replay-full"))
     .option("startingOffsets", "earliest")
     .option("maxOffsetsPerTrigger", "100000")
     .option("minPartitions", "8")

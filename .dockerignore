@@ -1,12 +1,11 @@
-# The dataset and generated artifacts are large (several GB); they are never
-# needed to build the image and the project is mounted into the container.
-data/
-output/
-.git/
-.venv/
-__pycache__/
+.git
+.venv
+.validation
+data
+output
+bin
+**/__pycache__
+**/*.sqlite*
+**/checkpoints
 *.pyc
-*.sqlite
-*.sqlite-*
-src/stream/checkpoints/
 Team_Project.pdf

@@ -4,4 +4,4 @@ pyspark==4.3.0
 kafka-python
 pyarrow
 
-# Add any additional batch/PostgreSQL dependencies required by teammates.
+# Add any additional batch/PostgreSQL dependencies for part 3.
