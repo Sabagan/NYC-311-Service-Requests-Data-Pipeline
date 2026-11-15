@@ -7,3 +7,14 @@ Counted noise complaints:      615,086
 Unique ZIP-hour groups:        321,010
 Difference:                          0
 Counts match:                   True
+
+
+### Validation Method
+
+To verify the streaming results, we compared the number of noise complaints in the original dataset against the total calculated by Spark.
+
+**Expected noise complaints (615,086):** We queried `events_sorted.sqlite`, which contains the original 3,171,200 records. We counted complaints where `complaint_type` starts with "Noise" and the ZIP code is not null or empty.
+
+**Counted noise complaints (615,086):** We queried `hourly_noise_full.sqlite`, which stores Spark's hourly aggregation results. We summed the `noise_count` column across all 321,010 ZIP-hour groups.
+
+Both methods returned 615,086 complaints, giving us a difference of 0. This confirms that the total number of eligible noise complaints in our streaming results matches the original dataset. However, matching totals alone does not verify every individual ZIP-hour group.
