@@ -1,7 +1,6 @@
 data/
 
 # Generated output
-output/
 
 # Spark checkpoints
 src/stream/checkpoints/

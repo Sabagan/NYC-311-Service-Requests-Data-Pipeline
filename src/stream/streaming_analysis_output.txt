@@ -1,0 +1,9 @@
+NYC 311 Streaming Results
+
+Total source records:        3,171,200
+Kafka ending offset:         3,171,200
+Expected noise complaints:     615,086
+Counted noise complaints:      615,086
+Unique ZIP-hour groups:        321,010
+Difference:                          0
+Counts match:                   True
