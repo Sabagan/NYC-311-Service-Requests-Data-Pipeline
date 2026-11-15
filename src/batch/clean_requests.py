@@ -10,7 +10,12 @@ from pyspark.sql.window import Window
 # Make src/ importable when this file is run as a script.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from config.spark_config import DATA_PROCESSING, DATA_RAW, configure_hadoop
+from config.spark_config import (
+    DATA_PROCESSING,
+    DATA_RAW,
+    RAW_CSV,
+    configure_hadoop,
+)
 
 # Point Hadoop at the bundled winutils before SparkSession starts.
 configure_hadoop()
@@ -19,7 +24,7 @@ configure_hadoop()
 # 1. CONFIGURATION
 # ============================================================
 
-raw_csv = DATA_RAW / "311_Service_Requests_For_2026_Until_20261019.csv"
+raw_csv = RAW_CSV
 clean_csv = (
     DATA_PROCESSING / "311_Service_Requests_For_2026_Until_20261019_clean.csv"
 )
