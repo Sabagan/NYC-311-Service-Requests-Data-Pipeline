@@ -1,0 +1,7 @@
+# Python dependencies used by the Kafka/PySpark streaming pipeline.
+# PySpark version matches the version used for the verified full run.
+pyspark==4.3.0
+kafka-python
+pyarrow
+
+# Add any additional batch/PostgreSQL dependencies required by teammates.
