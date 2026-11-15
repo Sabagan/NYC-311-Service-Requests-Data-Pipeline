@@ -146,4 +146,4 @@ Each row describes one ZIP code during one hour. An absent ZIP-hour combination 
 
 The expected count came from the sorted source records, and the actual count was calculated by summing `noise_count` in the results. These totals matched. Matching totals alone does not prove that every individual ZIP-hour count is correct.
 
-See `src/stream/streaming_analysis_output.txt` for the full-run summary. The final CSV can be shared with the PostgreSQL teammate for import and further analysis.
+See `src/stream/streaming_analysis_output.txt` for the full-run summary. 
