@@ -4,4 +4,5 @@ pyspark==4.3.0
 kafka-python
 pyarrow
 
-# Add any additional batch/PostgreSQL dependencies for part 3.
+# Part 3 (Serve): PostgreSQL driver.
+psycopg[binary]

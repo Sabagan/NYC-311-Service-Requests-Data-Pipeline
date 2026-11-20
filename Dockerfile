@@ -5,4 +5,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY src ./src
 COPY docker/run_stream.py ./docker/run_stream.py
+COPY docker/run_serve.py ./docker/run_serve.py
 CMD ["python", "-u", "docker/run_stream.py"]

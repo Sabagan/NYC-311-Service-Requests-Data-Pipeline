@@ -13,7 +13,11 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     healthcheck:
-      test: [CMD-SHELL, '/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1']
+      test:
+        [
+          CMD-SHELL,
+          "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1",
+        ]
       interval: 5s
       timeout: 10s
       retries: 30
@@ -30,6 +34,39 @@ services:
       - ./data/processing:/app/data/processing:ro
       - ./output:/app/output
       - stream-runs:/app/runs
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: nyc311
+      POSTGRES_PASSWORD: nyc311
+      POSTGRES_DB: nyc311
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nyc311 -d nyc311"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+  serve:
+    build: .
+    # Only runs when asked for: docker compose run --rm --build serve
+    profiles: [serve]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: nyc311
+      PGPASSWORD: nyc311
+      PGDATABASE: nyc311
+    volumes:
+      - ./data/processing:/app/data/processing:ro
+      - ./output:/app/output
+    command: ["python", "-u", "docker/run_serve.py"]
 volumes:
   kafka-data:
   stream-runs:
+  pg-data:
