@@ -7,6 +7,7 @@ Kafka and run entirely through Docker.
 | --- | --- | --- |
 | **Part 1 – Store and batch** | Cleans the raw CSV, converts it to Parquet (single file and month-partitioned), then benchmarks the three storage layouts against each other. | PySpark batch, Docker |
 | **Part 2 – Streaming** | Replays the cleaned records through Kafka and counts noise complaints per ZIP code and one-hour event-time window. | Kafka, Spark Structured Streaming |
+| **Part 3 – Serve** | Loads the batch and streaming results into PostgreSQL with quality checks, then answers all three questions with timed queries. | PostgreSQL, Docker |
 
 ## Questions Answered
 
@@ -224,19 +225,72 @@ ZIP-hour groups. The totals match, which confirms no eligible complaints were
 lost, though matching totals alone do not prove every individual ZIP-hour count
 is correct. See `src/stream/streaming_analysis_output.txt` for the summary.
 
+## Serving Layer: PostgreSQL (Part 3)
+
+The batch results (Q1, Q2) and the streaming results (Q3) are loaded into one PostgreSQL 17 database, which answers all three questions and measures each response time.
+
+### Run with Docker
+
+Start Docker Desktop, then from the repository root:
+
+```powershell
+docker compose run --rm --build serve
+```
+
+This starts the `postgres` container, waits until it is healthy, then runs three scripts in a `serve` container:
+
+1. `src/batch/export_batch_results.py` runs Q1 and Q2 with Spark on `data/processing/311_Service_Requests_For_2026.parquet` and saves the answers to `output/q1_complaints_by_borough.csv` and `output/q2_agency_close_time.csv`. It is skipped, with a message, if the Parquet file is missing.
+2. `src/serve/load_results.py` loads every result CSV found in `output/` into PostgreSQL, with quality checks and row counts.
+3. `src/serve/query_results.py` answers the three questions and prints each answer with its response time.
+
+To ask about a different borough, ZIP code or day:
+
+```powershell
+docker compose run --rm --build serve python -u src/serve/query_results.py --borough QUEENS --zip 11226 --date 2026-08-23 --explain
+```
+
+`--explain` also prints each query plan, which shows whether PostgreSQL used an index. The database keeps its data in the `pg-data` volume between runs; `docker compose down -v` deletes it.
+
+### Tables
+
+| Table | Answers | Primary key (index) |
+| --- | --- | --- |
+| `q1_complaints_by_borough` | Q1 | `(borough, complaint_type)` |
+| `q2_agency_close_time` | Q2 | `(agency)` |
+| `q3_hourly_noise` | Q3 | `(incident_zip, window_start)` |
+| `rejected_rows` | Rows that failed a check, with the check name and the original row | `id` |
+
+Each primary key matches how its question asks (by borough; by agency; by ZIP code and then a time range), so PostgreSQL finds the rows through the key's index instead of reading the whole table. The table definitions are in `src/serve/schema.sql`.
+
+### Quality checks while loading
+
+Each CSV is loaded inside one transaction: if anything fails, nothing is changed. The loader:
+
+- stops if the CSV header does not have the expected columns (wrong schema);
+- tags each row with the first check it fails: `missing_value`, `invalid_borough`, `invalid_count` (not a whole number, or below 1), `invalid_hours`, `invalid_zip` (not 5 digits), `invalid_window` (unreadable, or not exactly one hour), then `duplicate_key`;
+- moves failing rows to `rejected_rows` instead of dropping them;
+- checks that rows in the file = rows loaded + rows rejected, and undoes the load if not.
+
+It prints a report of rows in, loaded and rejected per table, and how many rows failed each check.
+
 ## Repository Layout
 
 - `src/batch/` – the three Part 1 PySpark scripts and their recorded run output.
 - `src/stream/` – `prepare_replay.py`, `producer.py`, `consumer.py` and the
   recorded streaming output. SQLite state and Spark checkpoints are generated
   here on host runs.
+- `src/serve/` – the Part 3 PostgreSQL scripts: `schema.sql`, `load_results.py`,
+  `query_results.py` and `db.py`.
 - `src/config/spark_config.py` – shared project paths and Windows Hadoop setup.
 - `docker/run_stream.py` – streaming entry point that runs the three stream
   scripts in order under a fresh run ID.
+- `docker/run_serve.py` – serving entry point that exports the batch results,
+  loads them into PostgreSQL and answers the three questions.
 - `bin/` – `winutils.exe` and `hadoop.dll`, needed only for host runs on
   Windows.
 - `data/raw/` – the original CSV and temporary build files.
 - `data/processing/` – cleaned CSV and both Parquet layouts.
-- `output/` – final streaming output, `hourly_noise_full.csv`.
+- `output/` – final streaming output, `hourly_noise_full.csv`, and the batch
+  results `q1_complaints_by_borough.csv` and `q2_agency_close_time.csv`.
 - `Dockerfile`, `compose.yaml`, `requirements.txt` – the shared image and the
-  `kafka`, `batch`, and `streaming` services.
+  `kafka`, `batch`, `streaming`, `postgres` and `serve` services.

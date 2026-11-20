@@ -23,6 +23,7 @@ RUN pip install -r requirements.txt
 # Copy application source and streaming entry point.
 COPY src ./src
 COPY docker/run_stream.py ./docker/run_stream.py
+COPY docker/run_serve.py ./docker/run_serve.py
 
 # Default command: streaming pipeline.
 # Batch service overrides this command in compose.yaml.
