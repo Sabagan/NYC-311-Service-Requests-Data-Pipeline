@@ -6,7 +6,7 @@ Kafka and run entirely through Docker.
 | Part | What it does | Stack |
 | --- | --- | --- |
 | **Part 1 – Store and batch** | Cleans the raw CSV, converts it to Parquet (single file and month-partitioned), then benchmarks the three storage layouts against each other. | PySpark batch, Docker |
-| **Part 2 – Streaming** | Replays the cleaned records through Kafka and counts noise complaints per ZIP code and one-hour event-time window. | Kafka, Spark Structured Streaming |
+| **Part 2 – Streaming** | Replays the cleaned records through Kafka and counts noise complaints per ZIP code and one-hour event-time window. | Kafka, Spark Structured Streaming, Docker |
 | **Part 3 – Serve** | Loads the batch and streaming results into PostgreSQL with quality checks, then answers all three questions with timed queries. | PostgreSQL, Docker |
 
 ## Questions Answered
