@@ -1,5 +1,5 @@
 data/
-output/hourly_noise_full_backup.csv
+output/
 .validation
 
 # Generated output
